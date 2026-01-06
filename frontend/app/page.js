@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import EnvironmentalChart from '@/app/components/environmentcharts';
+import AlertsPanel from './components/alertspanel';
 
 const socket = io('http://localhost:5000');
 
@@ -16,7 +17,7 @@ export default function Home() {
     });
 
     socket.on('alert', (a) => {
-      console.log('🚨 Alert received:', a);
+      console.log('Alert received:', a);
     });
 
     socket.on('alert', (a) => setAlerts((prev) => [a, ...prev].slice(0, 5)));
@@ -36,6 +37,8 @@ export default function Home() {
       ) : (
         <p className="mt-4 text-gray-500">Waiting for sensor data...</p>
       )}
+
+      <AlertsPanel></AlertsPanel>
 
       <h2 className="mt-4 font-bold">Alerts</h2>
       {alerts.length > 0 ? (
