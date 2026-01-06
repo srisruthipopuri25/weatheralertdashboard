@@ -26,6 +26,7 @@ io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 });
 
+// SENSOR SIMULATION (SOURCE OF DATA)
 setInterval(async () => {
   const payload = {
     temperature: random(20, 45),
@@ -34,33 +35,33 @@ setInterval(async () => {
     timestamp: new Date(),
   };
 
+  // Store in MongoDB
   await SensorData.create(payload);
 
+  // Emit to frontend
   io.emit('sensorData', payload);
 
+  // Threshold rules
   const rules = await Rule.find();
-
   for (const rule of rules) {
     const value = payload[rule.metric];
-
     if (value < rule.min || value > rule.max) {
-      const alert = {
-        message: `${rule.metric.toUpperCase()} threshold breached: ${value}`,
-        metric: rule.metric,
-        value,
-        timestamp: new Date(),
-      };
-
-      io.emit('alert', alert);
-      await sendSMS(alert.message);
+      const msg = `${rule.metric} threshold breached: ${value}`;
+      io.emit('alert', { message: msg });
+      await sendSMS(msg);
     }
+  }
+
+  // AI anomaly detection
+  const anomaly = await detectAnomaly();
+  if (anomaly?.isAnomaly) {
+    io.emit('alert', anomaly);
+    await sendSMS(anomaly.reason);
   }
 }, 5000);
 
 function random(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
-app.use('/api/anomaly', require('./routes/anamolyRoutes'));
 
 server.listen(5000, () => console.log('Server running on 5000'));
