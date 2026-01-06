@@ -15,6 +15,10 @@ export default function Home() {
       setData((prev) => [...prev, d].slice(-20));
     });
 
+    socket.on('alert', (a) => {
+      console.log('🚨 Alert received:', a);
+    });
+
     socket.on('alert', (a) => setAlerts((prev) => [a, ...prev].slice(0, 5)));
 
     return () => {
