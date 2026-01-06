@@ -5,49 +5,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let lastRun = 0; // rate-limit AI calls
-
-module.exports = async function detectAnomaly(currentData) {
-  // -----------------------------
-  // 1️⃣ SIMPLE STATISTICAL FALLBACK
-  // -----------------------------
-  if (
-    currentData.temperature > 45 ||
-    currentData.humidity > 90 ||
-    currentData.aqi > 300
-  ) {
-    return {
-      isAnomaly: true,
-      reason: 'Value exceeds safe environmental limits',
-      severity: 'high',
-      source: 'rule',
-    };
-  }
-
-  // -----------------------------
-  // 2️⃣ RATE LIMIT OPENAI (1/min)
-  // -----------------------------
-  const now = Date.now();
-  if (now - lastRun < 60_000) return null;
-  lastRun = now;
-
-  // -----------------------------
-  // 3️⃣ FETCH HISTORICAL DATA
-  // -----------------------------
+module.exports = async function detectAnomaly() {
   const history = await SensorData.find()
     .sort({ timestamp: -1 })
-    .limit(20)
+    .limit(30)
     .lean();
 
   if (history.length < 10) return null;
 
-  // -----------------------------
-  // 4️⃣ OPENAI ANALYSIS
-  // -----------------------------
   try {
     const prompt = `
-Analyze the following environmental sensor history.
-Detect anomalies based on patterns, spikes, or abnormal trends.
+Analyze historical environmental sensor data.
+Detect anomalies, trends, or abnormal spikes.
 
 Respond ONLY in JSON:
 {
@@ -66,12 +35,9 @@ ${JSON.stringify(history)}
       temperature: 0,
     });
 
-    return {
-      ...JSON.parse(res.choices[0].message.content),
-      source: 'ai',
-    };
+    return JSON.parse(res.choices[0].message.content);
   } catch (err) {
-    console.error('OpenAI skipped:', err.message);
+    console.error('OpenAI error:', err.message);
     return null;
   }
 };
