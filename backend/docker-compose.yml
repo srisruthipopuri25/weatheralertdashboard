@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://mongo:27017/envdata
+      OPENAI_API_KEY: your_key
+      TWILIO_SID: your_sid
+      TWILIO_AUTH_TOKEN: your_token
+      TWILIO_NUMBER: "+1234567890"
+      USER_NUMBER: "+919xxxxxxxxx"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
