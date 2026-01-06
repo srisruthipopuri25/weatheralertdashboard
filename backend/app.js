@@ -1,41 +1,67 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const SensorData = require('./models/sensordata');
+const Rule = require('./models/rule');
+const detectAnomaly = require('./services/anamolyservice');
+const { sendSMS } = require('./services/alertservice');
 
-var app = express();
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-app.use(logger('dev'));
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(console.error);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// 🔁 SENSOR SIMULATION (SOURCE OF DATA)
+setInterval(async () => {
+  const payload = {
+    temperature: random(20, 45),
+    humidity: random(30, 90),
+    aqi: random(50, 250),
+    timestamp: new Date(),
+  };
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+  // Store in MongoDB
+  await SensorData.create(payload);
 
-module.exports = app;
+  // Emit to frontend
+  io.emit('sensorData', payload);
+
+  // Threshold rules
+  const rules = await Rule.find();
+  for (const rule of rules) {
+    const value = payload[rule.metric];
+    if (value < rule.min || value > rule.max) {
+      const msg = `${rule.metric} threshold breached: ${value}`;
+      io.emit('alert', { message: msg });
+      await sendSMS(msg);
+    }
+  }
+
+  // AI anomaly detection
+  const anomaly = await detectAnomaly(payload);
+  if (anomaly?.isAnomaly) {
+    io.emit('alert', anomaly);
+    await sendSMS(anomaly.reason);
+  }
+}, 5000);
+
+function random(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+server.listen(5000, () => console.log('Server running on 5000'));
