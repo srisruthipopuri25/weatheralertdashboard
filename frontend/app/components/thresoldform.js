@@ -25,7 +25,7 @@ export default function ThresholdForm() {
 
   return (
     <div className="card">
-      <h2>⚙️ Threshold Rules</h2>
+      <h2>Threshold Rules</h2>
 
       <input
         name="temperature"
