@@ -1,5 +1,5 @@
-const OpenAI = require('openai');
-const SensorData = require('../models/sensordata');
+const OpenAI = require("openai");
+const SensorData = require("../models/sensordata");
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -30,14 +30,15 @@ ${JSON.stringify(history)}
 `;
 
     const res = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
       temperature: 0,
+      response_format: { type: "json_object" },
     });
 
     return JSON.parse(res.choices[0].message.content);
   } catch (err) {
-    console.error('OpenAI error:', err.message);
+    console.error("OpenAI error:", err.message);
     return null;
   }
 };
