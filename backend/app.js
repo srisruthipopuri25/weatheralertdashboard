@@ -26,7 +26,7 @@ io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 });
 
-// 🔁 SENSOR SIMULATION (SOURCE OF DATA)
+// SENSOR SIMULATION (SOURCE OF DATA)
 setInterval(async () => {
   const payload = {
     temperature: random(20, 45),
@@ -53,7 +53,7 @@ setInterval(async () => {
   }
 
   // AI anomaly detection
-  const anomaly = await detectAnomaly(payload);
+  const anomaly = await detectAnomaly();
   if (anomaly?.isAnomaly) {
     io.emit('alert', anomaly);
     await sendSMS(anomaly.reason);
