@@ -1,11 +1,10 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import EnvironmentalChart from '@/app/components/environmentcharts';
 import AlertsPanel from './components/alertspanel';
 
-const socket = io('http://localhost:5000');
+const socket = io(process.env.NEXT_PUBLIC_BACKEND);
 
 export default function Home() {
   const [data, setData] = useState([]);
