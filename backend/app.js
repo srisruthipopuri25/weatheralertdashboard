@@ -63,5 +63,11 @@ setInterval(async () => {
 function random(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'IoT Sensor Monitoring API is running 🚀',
+    status: 'OK'
+  });
+});
 
 server.listen(5000, () => console.log('Server running on 5000'));
