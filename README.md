@@ -1,4 +1,6 @@
 # 🌦️ Weather Alert Dashboard with IoT, AI & Real-Time Visualization
+Live: https://weatheralertdashboard.netlify.app/
+Backend: https://weatheralertdashboard.vercel.app/
 
 ## Overview
 
